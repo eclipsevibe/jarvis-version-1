@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+TARGET="$HOME/.local/share/gnome-shell/extensions/jarvis-controls@local"
+mkdir -p "$TARGET"
+install -m 644 "$ROOT/desktop-controls/extension.js" "$ROOT/desktop-controls/metadata.json" "$TARGET/"
+if [[ -d "$HOME/.local/share/gnome-shell/extensions/jarvis-desktop@local" ]]; then
+  install -m 644 "$ROOT/desktop/extension.js" "$HOME/.local/share/gnome-shell/extensions/jarvis-desktop@local/extension.js"
+fi
+if ! gnome-extensions info jarvis-controls@local >/dev/null 2>&1; then
+  echo 'Desktop controls installed. Log out and back in so GNOME discovers the extension.'
+  echo 'Then run this script again to enable it.'
+  exit 0
+fi
+gnome-extensions enable jarvis-controls@local
+echo 'Desktop controls enabled. If updating an already loaded version, log out and back in to reload it.'
+echo 'Restart Jarvis after code updates: systemctl --user restart jarvis.service'

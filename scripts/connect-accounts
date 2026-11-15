@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ "${1:-}" != google && "${1:-}" != microsoft ]]; then
+  echo 'Usage: bash ~/jarvis/scripts/connect-accounts google|microsoft'
+  echo 'Google is the default account used by Jarvis.'
+  exit 1
+fi
+"$ROOT/.venv/bin/python" -m pip install -r "$ROOT/requirements-accounts.txt"
+exec "$ROOT/.venv/bin/python" "$ROOT/account_setup.py" "$1"

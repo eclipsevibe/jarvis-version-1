@@ -1,0 +1,8 @@
+{
+  "uuid": "jarvis-desktop@local",
+  "name": "Jarvis Desktop Reactor",
+  "description": "Animated Jarvis desktop layer with speech-reactive rings. Existing Jarvis shortcut opens the command input.",
+  "shell-version": ["46"],
+  "version": 1,
+  "session-modes": ["user"]
+}

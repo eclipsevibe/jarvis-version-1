@@ -1,0 +1,8 @@
+{
+  "uuid": "jarvis-hud@local",
+  "name": "Jarvis Desktop HUD",
+  "description": "Live Jarvis system telemetry and reactor on the Cinnamon desktop",
+  "version": "1.0",
+  "prevent-decorations": true,
+  "cinnamon-version": ["6.6"]
+}

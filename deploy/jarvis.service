@@ -1,0 +1,16 @@
+[Unit]
+Description=Jarvis desktop assistant HUD and system tray
+After=graphical-session.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/jarvis
+ExecStart=%h/jarvis/.venv/bin/python %h/jarvis/ui.py --daemon
+Restart=on-failure
+RestartSec=3
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-%h/.config/jarvis/openai.env
+EnvironmentFile=-%h/.config/jarvis/local.env
+
+[Install]
+WantedBy=default.target

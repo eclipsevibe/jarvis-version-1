@@ -1,0 +1,18 @@
+[Unit]
+ConditionPathExists=!%h/.config/jarvis/local-inference-disabled
+Description=Jarvis local llama.cpp Vulkan inference server
+After=graphical-session.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/jarvis
+Environment=JARVIS_MODEL_PATH=%h/jarvis/models/Qwen3-1.7B-Q4_K_M.gguf
+Environment=JARVIS_CONTEXT_SIZE=8192
+EnvironmentFile=-%h/.config/jarvis/local.env
+ExecStart=%h/jarvis/llama.cpp/build/bin/llama-server -m ${JARVIS_MODEL_PATH} --host 127.0.0.1 --port 8080 -ngl 99 -fa on -c ${JARVIS_CONTEXT_SIZE} --threads 6 --parallel 1 --jinja --reasoning on
+Restart=on-failure
+RestartSec=3
+Environment=GGML_VULKAN=1
+
+[Install]
+WantedBy=default.target

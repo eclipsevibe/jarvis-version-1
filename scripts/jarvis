@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="${JARVIS_HOME:-$HOME/jarvis}"
+case "${1:-toggle}" in
+  resources) exec "$ROOT/.venv/bin/python" "$ROOT/ui.py" --resources ;;
+  controls|control-panel) exec "$ROOT/.venv/bin/python" "$ROOT/ui.py" --control-panel ;;
+  desktop|restore) exec "$ROOT/.venv/bin/python" "$ROOT/desktop_control.py" "$1" ;;
+  toggle|open) exec "$ROOT/.venv/bin/python" "$ROOT/ui.py" --toggle ;;
+  start) systemctl --user start jarvis.service ;;
+  stop) systemctl --user stop jarvis.service ;;
+  restart) systemctl --user restart jarvis.service ;;
+  engine)
+    if [[ -e "$HOME/.config/jarvis/local-inference-disabled" ]]; then
+      echo "Local AI is disabled while laptop power-offs are investigated." >&2
+      exit 1
+    fi
+    if grep -q '^JARVIS_LOCAL_URL=http://127\.0\.0\.1:11434/' "$HOME/.config/jarvis/local.env" 2>/dev/null; then
+      MODEL="$(sed -n 's/^JARVIS_MODEL=//p' "$HOME/.config/jarvis/local.env" | tail -n 1)"
+      ollama stop "${MODEL:-jarvis-gemma4-12b}" || true
+    else
+      systemctl --user restart jarvis-llm.service
+    fi
+    ;;
+  status) systemctl --user --no-pager status jarvis.service jarvis-llm.service ;;
+  logs) journalctl --user -u jarvis.service -u jarvis-llm.service -f ;;
+  *) echo "Usage: jarvis [toggle|open|controls|resources|start|stop|restart|engine|status|logs|desktop|restore]" >&2; exit 2 ;;
+esac

@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""Install Super+J without replacing existing desktop shortcuts."""
+import ast
+import os
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+
+
+def run(*args):
+    result = subprocess.run(args, capture_output=True, text=True, timeout=15)
+    if result.returncode:
+        raise RuntimeError(result.stderr.strip() or result.stdout.strip())
+    return result.stdout.strip()
+
+
+def get(schema, key):
+    value = run('gsettings','get',schema,key)
+    return ast.literal_eval(value.removeprefix('@as '))
+
+
+def put(schema, key, value):
+    result = subprocess.run(['gsettings','set',schema,key,repr(value)], capture_output=True, text=True, timeout=15)
+    if result.returncode or get(schema,key) != value:
+        raise RuntimeError('Could not save the desktop shortcut. Run this script in a terminal on your laptop desktop.\n'+result.stderr.strip())
+
+
+def main():
+    root = Path(__file__).resolve().parent.parent
+    schemas = run('gsettings','list-schemas').splitlines()
+    cinnamon = 'cinnamon' in os.environ.get('XDG_CURRENT_DESKTOP','').lower()
+    if cinnamon:
+        schema = 'org.cinnamon.desktop.keybindings'
+        custom = schema+'.custom-keybinding'
+        base = '/org/cinnamon/desktop/keybindings/custom-keybindings/'
+        list_key = 'custom-list'
+    else:
+        schema = 'org.gnome.settings-daemon.plugins.media-keys'
+        custom = schema+'.custom-keybinding'
+        base = '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/'
+        list_key = 'custom-keybindings'
+    if schema not in schemas:
+        raise RuntimeError('This shortcut installer supports GNOME and Cinnamon desktops.')
+    entries = get(schema,list_key)
+    path = base+'jarvis-control-panel/'
+    command = shlex.join([str(root/'.venv/bin/python'), str(root/'ui.py'), '--control-panel'])
+    # Keep all other shortcuts and refuse an existing custom Super+J conflict.
+    for entry in entries:
+        target = custom+':'+entry
+        binding = get(target,'binding')
+        bindings = binding if isinstance(binding,list) else [binding]
+        if entry != path and any(b.lower()=='<super>j' for b in bindings):
+            raise RuntimeError('Super+J is already assigned to '+str(get(target,'name'))+'. Change that shortcut in Keyboard Settings first.')
+    target = custom+':'+path
+    if path in entries and get(target,'name') != 'Jarvis Control Panel':
+        raise RuntimeError('The Jarvis shortcut path is already used by another shortcut. No settings were changed.')
+    binding_range = run('gsettings','range',target,'binding')
+    binding = ['<Super>j'] if binding_range=='type as' else '<Super>j'
+    put(target,'name','Jarvis Control Panel')
+    put(target,'command',command)
+    put(target,'binding',binding)
+    if path not in entries: put(schema,list_key,entries+[path])
+    print('Super+J now opens and closes the Jarvis Control Panel. Existing shortcuts were preserved.')
+
+
+if __name__=='__main__':
+    try:main()
+    except (RuntimeError,ValueError,OSError,subprocess.TimeoutExpired) as exc:
+        print(str(exc),file=sys.stderr);sys.exit(1)
